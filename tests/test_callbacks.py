@@ -33,8 +33,9 @@ def test_model_checkpointing():
     train_loader = DataLoader(
         ds, 1, workers=1
     )
+    model = TinyConvNet(10)
     callback._set_refs(
-        TinyConvNet(), train_loader, val_loader=None
+        model, train_loader, val_loader=None
     )
     callback.configure(1, "train")
     callback.log("loss", 1)
@@ -44,3 +45,6 @@ def test_model_checkpointing():
 
     target_path = Path("/tmp/checkpoint_2.00 1.npy")
     assert(target_path.exists())
+
+    model.load(target_path)
+    
