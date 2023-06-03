@@ -1,6 +1,9 @@
 import numpy as np
 from PIL import Image
 from typing import Union
+from pathlib import Path
+
+from tinygrad.nn import optim
 
 class LightningModule:
     def __init__(self):
@@ -25,7 +28,7 @@ class LightningModule:
 
     def _get_optimizers(self):
         optim = self.configure_optimizers()
-        
+
         if isinstance(optim, list):
             return optim
         else:
@@ -44,3 +47,22 @@ class LightningModule:
         optim.zero_grad()
         loss.backward()
         optim.step()
+    
+    def save(self, filename: str):
+        path = Path(filename)
+        assert(path.name.endswith(".npy"))
+        with path.open("wb") as f:
+            for par in optim.get_parameters(self):
+                np.save(f, par.cpu().numpy())
+
+    def load(self, filename: Union[str, Path], gpu=False):
+        path = Path(filename)
+        with path.open("rb") as f:
+            for par in optim.get_parameters(self):
+                #if par.requires_grad:
+                try:
+                    par.cpu().numpy()[:] = np.load(f)
+                    if gpu:
+                        par.gpu()
+                except:
+                    print('Could not load parameter')

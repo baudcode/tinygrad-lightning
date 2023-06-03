@@ -35,47 +35,34 @@ class LightningCallback(object):
     def on_batch_end(self, logs):
         pass
 
-    def save(self, filename: str):
-        path = Path(filename)
-        assert(path.name.endswith(".npy"))
-        with path.open("wb") as f:
-            for par in optim.get_parameters(self):
-                np.save(f, par.cpu().numpy())
-
-    def load(self, filename: Union[str, Path], gpu=False):
-        path = Path(filename)
-        with path.open("rb") as f:
-            for par in optim.get_parameters(self):
-                #if par.requires_grad:
-                try:
-                    par.cpu().numpy()[:] = np.load(f)
-                    if gpu:
-                        par.gpu()
-                except:
-                    print('Could not load parameter')
-
 
 class CheckpointCallback(LightningCallback):
     
-    def __init__(self, path: str, every: int = 1):
+    def __init__(self, path: str, every: int = 1, mode = "val"):
         self.current_mode = "train"
+        self.target_mode = mode
         self.path = path
+        self.every = every
         self.scalars = defaultdict(lambda: [])
+        self.current_epoch = 1
 
     def configure(self, steps, mode='train'):
         self.current_mode = mode
     
     def log(self, name: str, value: any) -> Any:
-        self.scalars[f"{self.mode}_{name}"].append(value)
+        self.scalars[f"{self.current_mode}_{name}"].append(value)
 
     def on_epoch_end(self):
-        logs = {k: np.asarray(v).mean() for k, v in self.scalars.items()}
-        
-        save_path = self.path.format(**logs)
-        self.model.save(save_path)
+        if self.target_mode == self.current_mode and self.current_epoch % self.every == 0:
+            logs = {k: np.asarray(v).mean() for k, v in self.scalars.items()}
+            logs.update(epoch=self.current_epoch)
+            print("Path: ", self.path)
+            save_path = self.path.format(**logs)
+            self.model.save(save_path)
         
         # reset scalars
         self.scalars = {}
+        self.current_epoch += 1
 
 class TQDMProgressBar(LightningCallback):
     def __init__(self, refresh_rate=10):
