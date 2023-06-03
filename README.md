@@ -1,4 +1,4 @@
-# Tinygrad Lightning
+# Tinygrad Lightning - WIP
 
 Pytorch Lightning clone for tinygrad. Easy data loading, training, logging and checkpointing.
 
