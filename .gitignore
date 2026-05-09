@@ -160,5 +160,10 @@ cython_debug/
 #.idea/
 
 examples/mnist/
+examples/horizonnet/
 logdir/**
 logs/**
+lightning_logs/
+.venv-test/
+.venv/
+.claude/
